@@ -66,7 +66,10 @@ public:
     passive = ASIO_OS_DEF(AI_PASSIVE),
     numeric_host = ASIO_OS_DEF(AI_NUMERICHOST),
     numeric_service = ASIO_OS_DEF(AI_NUMERICSERV),
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshadow"
     v4_mapped = ASIO_OS_DEF(AI_V4MAPPED),
+#pragma clang diagnostic pop
     all_matching = ASIO_OS_DEF(AI_ALL),
     address_configured = ASIO_OS_DEF(AI_ADDRCONFIG)
   };

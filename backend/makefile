@@ -66,6 +66,7 @@ else
 
 		PLATFORM := macos
 		LIB_DIR  := lib/macos
+		CXXFLAGS += -Wno-deprecated-declarations
 
 		ifeq ($(RELEASE_VERSION),)
 			LDFLAGS += -rpath ../$(LIB_DIR)
