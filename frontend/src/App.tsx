@@ -1,13 +1,16 @@
-import classes from './App.module.css'
+import { CssBaseline, Box } from '@mui/material'
+import { Header } from './components/Header.tsx';
 import { Matchlist } from './pages/matchlist/Matchlist.tsx';
+
 
 function App() {
   return (
     <>
-      <div className={classes.header}>
-        <h1 className={classes.title}>Gold Rush Replays</h1>
-      </div>
+    <CssBaseline />
+      <Box style={{ backgroundColor: 'var(--color-tan)', minHeight: '100vh' }}>
+      <Header />
       <Matchlist />
+    </Box>
     </>
   )
 }
