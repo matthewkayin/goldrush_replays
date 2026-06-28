@@ -1,10 +1,11 @@
 import { Section, SectionHeader } from '../../components/SectionHeader.tsx';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Container, Table, TableBody, TableCell, TableHead, TableRow, Box, Link, Button } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { type Match } from '../../types/match.ts';
 import { useReactTable, createColumnHelper, getCoreRowModel, flexRender } from '@tanstack/react-table';
 import { UploadDialog } from './components/UploadDialog.tsx';
+import { apiPOST } from '../../api/client.ts';
 
 const defaultData: Match[] = [
   { id: '1', date: '2026-04-01', name: 'Hello friend', duration: '15:22' },
@@ -41,6 +42,22 @@ export const Matchlist = () => {
     data,
     getCoreRowModel: getCoreRowModel(),
   });
+
+  const onSubmit = useCallback(async (files: File[]) => {
+    const formData = new FormData();
+    files.forEach((file: File) => {
+      formData.append('files', file);
+    });
+
+    try {
+      const response = await apiPOST('/match', {
+        body: formData
+      });
+      console.log('Got response', response);
+    } catch (err) {
+      console.log('Error: ', err);
+    }
+  }, []);
 
   return (
     <Container>
@@ -82,7 +99,7 @@ export const Matchlist = () => {
       <UploadDialog
       open={uploadDialogOpen}
       onClose={() => setUploadDialogOpen(false)}
-      onSubmit={() => {}}
+      onSubmit={onSubmit}
       />
     </Container>
   );

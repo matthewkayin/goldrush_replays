@@ -78,6 +78,7 @@ export const UploadDialog = ({ open, onClose, onSubmit }: UploadDialogProps) => 
     onClose();
     if (onSubmit && replayFiles) {
       onSubmit(replayFiles);
+      setReplayFiles([]);
     }
   }, [onClose, onSubmit, replayFiles]);
 
@@ -91,7 +92,6 @@ export const UploadDialog = ({ open, onClose, onSubmit }: UploadDialogProps) => 
   const dropzoneMessage = isDragActive
     ? 'Drop the files here!'
     : 'Drag and drop a file here or click';
-  console.log('rerender ', replayFiles);
 
   return (
     <Modal
