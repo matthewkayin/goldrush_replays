@@ -1,9 +1,10 @@
 import { Section, SectionHeader } from '../../components/SectionHeader.tsx';
 import { useState } from 'react';
-import { Container, Table, TableBody, TableCell, TableHead, TableRow, Box } from '@mui/material';
+import { Container, Table, TableBody, TableCell, TableHead, TableRow, Box, Link, Button } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { type Match } from '../../types/match.ts';
 import { useReactTable, createColumnHelper, getCoreRowModel, flexRender } from '@tanstack/react-table';
+import { UploadDialog } from './components/UploadDialog.tsx';
 
 const defaultData: Match[] = [
   { id: '1', date: '2026-04-01', name: 'Hello friend', duration: '15:22' },
@@ -33,6 +34,7 @@ const MatchlistTableCell = styled(TableCell)`
 `;
 
 export const Matchlist = () => {
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [data, _setData] = useState(() => [...defaultData]);
   const tanTable = useReactTable({
     columns,
@@ -43,7 +45,10 @@ export const Matchlist = () => {
   return (
     <Container>
       <Section>
-        <SectionHeader>Replay List</SectionHeader>
+        <SectionHeader>Replays</SectionHeader>
+      </Section>
+      <Section>
+        <Button onClick={(e) => { e.preventDefault(); setUploadDialogOpen(true); }}>⬆️Upload New Replay</Button>
       </Section>
       <Box>
         <Table>
@@ -67,12 +72,18 @@ export const Matchlist = () => {
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </MatchlistTableCell>
                 ))}
-                <MatchlistTableCell><a href="#">📊Analyze</a> <a href="#">⬇️Download</a></MatchlistTableCell>
+                <MatchlistTableCell><Link href="#">📊Analyze</Link> <Link href="#">⬇️Download</Link></MatchlistTableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </Box>
+
+      <UploadDialog
+      open={uploadDialogOpen}
+      onClose={() => setUploadDialogOpen(false)}
+      onSubmit={() => {}}
+      />
     </Container>
   );
 };

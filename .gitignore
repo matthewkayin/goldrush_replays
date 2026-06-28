@@ -4,3 +4,4 @@ backend/compile_commands.json
 frontend/dist
 frontend/node_modules
 .DS_Store
+node_modules

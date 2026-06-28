@@ -8,5 +8,10 @@ export default defineConfig({
     modules: {
       localsConvention: 'camelCaseOnly'
     }
+  },
+  /* Uncomment to disable hot reload
+  server: {
+    hmr: false
   }
+  */
 })
