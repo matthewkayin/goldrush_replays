@@ -9,9 +9,14 @@ export default defineConfig({
       localsConvention: 'camelCaseOnly'
     }
   },
-  /* Uncomment to disable hot reload
   server: {
-    hmr: false
+    // Uncomment to disable hot reload
+    // hmr: false
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true
+      }
+    }
   }
-  */
 })

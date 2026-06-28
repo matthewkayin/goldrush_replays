@@ -59,6 +59,7 @@ void Logger::log(const std::string& message, LogLevel level) {
 
     if (m_logfile) {
         fprintf(m_logfile, "%s", out_message);
+        fflush(m_logfile);
     }
 }
 
