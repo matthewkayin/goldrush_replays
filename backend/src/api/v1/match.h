@@ -2,4 +2,4 @@
 
 #include <crow.h>
 
-crow::response api_match_post();
+crow::response api_match_post(const crow::request& request);

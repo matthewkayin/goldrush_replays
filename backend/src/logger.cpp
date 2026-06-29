@@ -63,8 +63,75 @@ void Logger::log(const std::string& message, LogLevel level) {
     }
 }
 
-void Logger::critical(const char* message) { log(message, LogLevel::Critical); }
-void Logger::error(const char* message) { log(message, LogLevel::Error); }
-void Logger::warn(const char* message) { log(message, LogLevel::Warning); }
-void Logger::info(const char* message) { log(message, LogLevel::Info); }
-void Logger::debug(const char* message) { log(message, LogLevel::Debug); }
+void Logger::logf(LogLevel level, const char* message, __builtin_va_list args) {
+    const size_t MESSAGE_BUFFER_LENGTH = 32000;
+    char out_message[MESSAGE_BUFFER_LENGTH];
+    memset(out_message, 0, sizeof(out_message));
+
+    __builtin_va_list arg_ptr;
+    va_copy(arg_ptr, args);
+    vsnprintf(out_message, MESSAGE_BUFFER_LENGTH, message, arg_ptr);
+    va_end(arg_ptr);
+
+    log(out_message, level);
+}
+
+void Logger::critical(const char* message, ...) {
+    __builtin_va_list args;
+    va_start(args, message);
+    logf(LogLevel::Critical, message, args);
+    va_end(args);
+}
+
+void Logger::error(const char* message, ...) {
+    __builtin_va_list args;
+    va_start(args, message);
+    logf(LogLevel::Error, message, args);
+    va_end(args);
+}
+
+void Logger::warn(const char* message, ...) {
+    __builtin_va_list args;
+    va_start(args, message);
+    logf(LogLevel::Warning, message, args);
+    va_end(args);
+}
+
+void Logger::info(const char* message, ...) {
+    __builtin_va_list args;
+    va_start(args, message);
+    logf(LogLevel::Info, message, args);
+    va_end(args);
+}
+
+void Logger::debug(const char* message, ...) {
+    __builtin_va_list args;
+    va_start(args, message);
+    logf(LogLevel::Debug, message, args);
+    va_end(args);
+}
+
+// Exception Format
+
+exceptionf::exceptionf(const char* format, ...) {
+    __builtin_va_list args;
+    va_start(args, format);
+
+    __builtin_va_list args_copy;
+    va_copy(args_copy, args);
+    int length = vsnprintf(nullptr, 0, format, args_copy);
+    va_end(args_copy);
+
+    if (length > 0) {
+        m_message.resize(length);
+        vsnprintf(m_message.data(), m_message.size() + 1, format, args);
+    } else {
+        m_message = "Unknown formatted exception.";
+    }
+
+    va_end(args);
+}
+
+const char* exceptionf::what() const noexcept {
+    return m_message.c_str();
+}

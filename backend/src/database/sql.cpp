@@ -8,87 +8,59 @@
 
 static const char* DATABASE_FILE = "./database.db";
 
-SqlStatement SqlStatement::from_string(const char* statement_str) {
-    SqlStatement out_statement;
-    out_statement.m_statement = statement_str;
-    return out_statement;
-}
-
-SqlStatement SqlStatement::from_file(const char* path) {
-    std::ifstream sql_file(path);
-    if (!sql_file) {
-        throw std::exception((std::string("Unable to read SQL statement at path ") + path).c_str());
-    }
-
-    std::ostringstream string_stream;
-    string_stream << sql_file.rdbuf();
-
-    return SqlStatement::from_string(string_stream.str().c_str());
-}
-
-void SqlStatement::bind_null() {
-    m_params.push_back(std::string("NULL"));
-}
-
-void SqlStatement::bind_integer(int value) {
-    m_params.push_back(std::to_string(value));
-}
-
-void SqlStatement::bind_real(double value) {
-    return m_params.push_back(std::to_string(value));
-}
-
-void SqlStatement::bind_text(const char* value) {
-    m_params.push_back(std::string("'") + value + "'");
-}
-
-std::string SqlStatement::to_string() const {
-    std::string result = m_statement;
-    size_t question_mark_index = result.find('?');
-    size_t param_index = 0;
-    while (question_mark_index != std::string::npos) {
-        if (param_index >= m_params.size()) {
-            throw std::exception("Sql statement expects more parameters than are bound.");
-        }
-
-        result.replace(question_mark_index, 1, m_params[param_index]);
-    }
-
-    return result;
-}
-
-SqlConnection::SqlConnection() {
-    int result = sqlite3_open(DATABASE_FILE, &m_connection);
-    if (result != SQLITE_OK) {
-        throw std::exception((std::string("Error opening database: ") + sqlite3_errmsg(m_connection)).c_str());
-    }
-}
-
-SqlConnection::~SqlConnection() {
-    sqlite3_close(m_connection);
-}
-
-SqlConnection::QueryResult SqlConnection::execute(const SqlStatement& statement) {
-    QueryResult result_rows;
-
-    Logger& logger = Logger::get_instance();
-    const std::string statement_str = statement.to_string();
+SqlStatement::SqlStatement(sqlite3* connection, const char* statement_str) {
+    m_connection = connection;
 
     // Prepare statement
-    sqlite3_stmt* sqlite_statement;
-    int result = sqlite3_prepare_v2(
-        m_connection, statement_str.c_str(), statement_str.size() + 1, &sqlite_statement, nullptr);
+    int result = sqlite3_prepare_v2(connection, statement_str, strlen(statement_str) + 1, &m_statement, nullptr);
     if (result != SQLITE_OK) {
-        throw std::exception((std::string("Error preparing SQL statement: ") + sqlite3_errmsg(m_connection)).c_str());
+        throw exceptionf("Error preparing SQL statement: %s", sqlite3_errmsg(m_connection));
     }
+}
+
+SqlStatement::~SqlStatement() {
+    if (m_statement != nullptr) {
+        int result = sqlite3_finalize(m_statement);
+        if (result != SQLITE_OK) {
+            Logger& logger = Logger::get_instance();
+            logger.warn("Non-OK result returned in sqlite3_finalize in ~SqlStatement. Code: %i Message: %s",
+                result, sqlite3_errmsg(m_connection));
+        }
+    }
+}
+
+void SqlStatement::bind_blob(int index, void* data, int length) {
+    sqlite3_bind_blob(m_statement, index, data, length, SQLITE_STATIC);
+}
+
+void SqlStatement::bind_null(int index) {
+    sqlite3_bind_null(m_statement, index);
+}
+
+void SqlStatement::bind_text(int index, const char* value) {
+    sqlite3_bind_text(m_statement, index, value, strlen(value) + 1, SQLITE_STATIC);
+}
+
+void SqlStatement::bind_int(int index, int value) {
+    sqlite3_bind_int(m_statement, index, value);
+}
+
+void SqlStatement::bind_double(int index, double value) {
+    sqlite3_bind_double(m_statement, index, value);
+}
+
+SqlStatement::Result SqlStatement::execute() {
+    Logger& logger = Logger::get_instance();
+    Result result_rows;
+    int result_code;
 
     // Execute statement
-    while ((result = sqlite3_step(sqlite_statement)) != SQLITE_DONE) {
-        switch (result) {
+    while ((result_code = sqlite3_step(m_statement)) != SQLITE_DONE) {
+        switch (result_code) {
             case SQLITE_ROW: {
                 result_rows.push_back(std::vector<std::string>());
-                for (int col = 0; col < sqlite3_column_count(sqlite_statement); col++) {
-                    result_rows.back().push_back(std::string((const char*)sqlite3_column_text(sqlite_statement, col)));
+                for (int col = 0; col < sqlite3_column_count(m_statement); col++) {
+                    result_rows.back().push_back(std::string((const char*)sqlite3_column_text(m_statement, col)));
                 }
                 break;
             }
@@ -101,16 +73,46 @@ SqlConnection::QueryResult SqlConnection::execute(const SqlStatement& statement)
             case SQLITE_MISUSE:
             case SQLITE_ERROR:
             default: {
-                throw std::exception(
-                    (std::string("SQL execute encountered error. Code: ") + std::to_string(result) +
-                        " Message: " + sqlite3_errmsg(m_connection)).c_str());
+                throw exceptionf("SQL execute encountered error. Code: %i Message %s",
+                    result_code, sqlite3_errmsg(m_connection));
                 break;
             }
         }
     }
 
-    // Finalize statement
-    sqlite3_finalize(sqlite_statement);
+    // Reset the statement
+    result_code = sqlite3_reset(m_statement);
+    if (result_code != SQLITE_OK) {
+        throw exceptionf("SqlStatement::execute() sqlite3_reset() failed. Code: %i Message: %s",
+            result_code, sqlite3_errmsg(m_connection));
+    }
 
     return result_rows;
+}
+
+SqlConnection::SqlConnection() {
+    int result = sqlite3_open(DATABASE_FILE, &m_connection);
+    if (result != SQLITE_OK) {
+        throw exceptionf("Error opening database: %s", sqlite3_errmsg(m_connection));
+    }
+}
+
+SqlConnection::~SqlConnection() {
+    sqlite3_close(m_connection);
+}
+
+SqlStatement SqlConnection::prepare(const char* statement_str) {
+    return SqlStatement(m_connection, statement_str);
+}
+
+SqlStatement SqlConnection::prepare_from_file(const char* path) {
+    std::ifstream sql_file(path);
+    if (!sql_file) {
+        throw exceptionf("Unable to read SQL statement at path %s", path);
+    }
+
+    std::ostringstream string_stream;
+    string_stream << sql_file.rdbuf();
+
+    return SqlStatement(m_connection, string_stream.str().c_str());
 }

@@ -9,8 +9,8 @@ async function apiCall<T>(endpoint: string, options: RequestOptions = {}) {
 
   const headers = new Headers(options.headers);
   if (options.body && typeof options.body === 'object') {
-    headers.set('Content-Type', 'application/json');
-    options.body = JSON.stringify(options.body);
+    // headers.set('Content-Type', 'application/json');
+    // options.body = JSON.stringify(options.body);
   }
 
   const config: RequestInit = {

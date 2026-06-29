@@ -4,31 +4,34 @@
 #include <vector>
 
 struct sqlite3;
+struct sqlite3_stmt;
 
 class SqlStatement {
 public:
-    SqlStatement() = default;
-    static SqlStatement from_string(const char* statement_str);
-    static SqlStatement from_file(const char* path);
+    using Result = std::vector<std::vector<std::string>>;
 
-    void bind_null();
-    void bind_integer(int value);
-    void bind_real(double value);
-    void bind_text(const char* value);
+    SqlStatement(sqlite3* connection, const char* statement_str);
+    ~SqlStatement();
 
-    std::string to_string() const;
+    void bind_blob(int index, void* data, int length);
+    void bind_null(int index);
+    void bind_text(int index, const char* value);
+    void bind_int(int index, int value);
+    void bind_double(int index, double value);
+
+    Result execute();
 private:
-    std::string m_statement;
-    std::vector<std::string> m_params;
+    sqlite3* m_connection;
+    sqlite3_stmt* m_statement;
 };
 
 class SqlConnection {
 public:
-    using QueryResult = std::vector<std::vector<std::string>>;
-
     SqlConnection();
     ~SqlConnection();
-    QueryResult execute(const SqlStatement& statement);
+
+    SqlStatement prepare(const char* statement_str);
+    SqlStatement prepare_from_file(const char* path);
 private:
     sqlite3* m_connection;
 };

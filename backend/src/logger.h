@@ -20,12 +20,21 @@ public:
 
     void log(const std::string& message, LogLevel level) override;
 
-    void critical(const char* message);
-    void error(const char* message);
-    void warn(const char* message);
-    void info(const char* message);
-    void debug(const char* message);
+    void logf(LogLevel level, const char* message, __builtin_va_list args);
+    void critical(const char* message, ...);
+    void error(const char* message, ...);
+    void warn(const char* message, ...);
+    void info(const char* message, ...);
+    void debug(const char* message, ...);
 private:
     FILE* m_logfile;
     LogLevel m_log_level;
+};
+
+class exceptionf : public std::exception {
+public:
+    exceptionf(const char* format, ...);
+    const char* what() const noexcept override;
+private:
+    std::string m_message;
 };
