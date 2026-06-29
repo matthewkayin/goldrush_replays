@@ -108,7 +108,10 @@ private:
       std::size_t bytes_transferred);
 
   // The io_context used to obtain an I/O executor.
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wunused-private-field"
   io_context& io_context_;
+  #pragma clang diagnostic pop
 
   // The io_context implementation used to post completions.
   io_context_impl& io_context_impl_;

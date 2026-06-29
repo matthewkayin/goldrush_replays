@@ -10,6 +10,8 @@ LIB_DIR         := lib
 
 CXX             := clang++
 CXXSTD          := -std=c++17
+C             := clang
+CSTD          := -std=c99
 
 INCLUDE_DIRS    := -Isrc -Ivendor
 DEFINES         := -D_CRT_SECURE_NO_WARNINGS
@@ -48,6 +50,7 @@ ifeq ($(OS),Windows_NT)
 	# Recursive wildcard
 	rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 	SRC_FILES   := $(call rwildcard,$(SRC_DIR)/,*.cpp)
+	SRC_FILES   += $(call rwildcard,$(SRC_DIR)/,*.c)
 	RC_FILES    := $(SRC_DIR)/win_icon.rc
 	DIRECTORY   := $(subst /,\,${CURDIR})
 	SHELL       := cmd
@@ -59,7 +62,7 @@ else
 
 	UNAME_S := $(shell uname -s)
 
-	SRC_FILES := $(shell find $(SRC_DIR) -type f \( -name "*.cpp" -o -name "*.mm" \))
+	SRC_FILES := $(shell find $(SRC_DIR) -type f \( -name "*.cpp" -o -name "*.mm" -o -name "*.c" \))
 	DIRECTORIES := $(shell find src -type d)
 
 	ifeq ($(UNAME_S),Darwin)
@@ -127,6 +130,11 @@ compile:
 $(OBJ_DIR)/%.cpp.o: %.cpp
 	@echo   $<...
 	@$(CXX) $< $(CXXFLAGS) -c -o $@ $(DEFINES) $(INCLUDE_DIRS)
+
+# Compile c to object
+$(OBJ_DIR)/%.c.o: %.c
+	@echo   $<...
+	@$(C) $< $(CFLAGS) -c -o $@ $(DEFINES) $(INCLUDE_DIRS)
 
 # ------------------------------------------------------------------------------
 # Link
