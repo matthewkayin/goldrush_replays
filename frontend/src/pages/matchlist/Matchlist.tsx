@@ -1,6 +1,6 @@
 import { Section, SectionHeader } from '../../components/SectionHeader.tsx';
 import { useState, useCallback, useEffect } from 'react';
-import { Container, Table, TableBody, TableCell, TableHead, TableRow, Box, Link, Button } from '@mui/material';
+import { Container, Table, TableBody, TableCell, TableHead, TableRow, Box, Link, Button, Snackbar } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { type Match } from '../../types/match.ts';
 import { useReactTable, createColumnHelper, getCoreRowModel, flexRender } from '@tanstack/react-table';
@@ -30,6 +30,8 @@ const MatchlistTableCell = styled(TableCell)`
 export const Matchlist = () => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [data, setData] = useState<Match[]>([]);
+  const [queryString, setQueryString] = useState('');
+  const [snackMessage, setSnackMessage] = useState('');
 
   // GET MATCH DATA
   useEffect(() => {
@@ -38,7 +40,7 @@ export const Matchlist = () => {
 
     const fetchData = async () => {
       try {
-        const response = await apiGet<ApiResponse<Match>>('/match');
+        const response = await apiGet<ApiResponse<Match>>(`/match${queryString}`);
         setData(response.data);
       } catch (err) {
         if (err.name !== 'AbortError') {
@@ -49,7 +51,7 @@ export const Matchlist = () => {
 
     fetchData();
     return () => abortController.abort();
-  }, []);
+  }, [queryString]);
 
   // TABLE
   const tanTable = useReactTable({
@@ -69,10 +71,17 @@ export const Matchlist = () => {
       const response = await apiPost<ApiResponse<Match>>('/match', {
         body: formData
       });
-      setData(response.data);
+      const ids = response.data.map((record) => record.id).join(',');
+      setQueryString(`?ids=${ids}`);
+      setSnackMessage('Upload success');
     } catch (err) {
       console.log('Error: ', err);
     }
+  }, []);
+
+  // SNACK MESSAGE ON CLOSE
+  const onSnackbarCloseCallback = useCallback(() => {
+    setSnackMessage('');
   }, []);
 
   return (
@@ -116,6 +125,13 @@ export const Matchlist = () => {
       open={uploadDialogOpen}
       onClose={() => setUploadDialogOpen(false)}
       onSubmit={onSubmit}
+      />
+      <Snackbar
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      open={snackMessage !== ''}
+      onClose={onSnackbarCloseCallback}
+      message={snackMessage}
+      autoHideDuration={3000}
       />
     </Container>
   );
