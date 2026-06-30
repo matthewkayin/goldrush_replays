@@ -1,18 +1,11 @@
 import { Section, SectionHeader } from '../../components/SectionHeader.tsx';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Container, Table, TableBody, TableCell, TableHead, TableRow, Box, Link, Button } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { type Match } from '../../types/match.ts';
 import { useReactTable, createColumnHelper, getCoreRowModel, flexRender } from '@tanstack/react-table';
 import { UploadDialog } from './components/UploadDialog.tsx';
-import { apiPOST } from '../../api/client.ts';
-
-const defaultData: Match[] = [
-  { id: '1', date: '2026-04-01', name: 'Hello friend', duration: '15:22' },
-  { id: '2', date: '2026-04-01', name: 'Hello friend', duration: '15:22' },
-  { id: '3', date: '2026-04-01', name: 'Hello friend', duration: '15:22' },
-  { id: '4', date: '2026-04-01', name: 'Hello friend', duration: '15:22' },
-];
+import { apiGet, apiPost, type ApiResponse } from '../../api/client.ts';
 
 const columnHelper = createColumnHelper<Match>();
 const columns = [
@@ -36,13 +29,36 @@ const MatchlistTableCell = styled(TableCell)`
 
 export const Matchlist = () => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [data, _setData] = useState(() => [...defaultData]);
+  const [data, setData] = useState<Match[]>([]);
+
+  // GET MATCH DATA
+  useEffect(() => {
+    // Cleans up pending requests if the component unmounts
+    const abortController = new AbortController();
+
+    const fetchData = async () => {
+      try {
+        const response = await apiGet<ApiResponse<Match>>('/match');
+        setData(response.data);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.log(err.message);
+        }
+      }
+    };
+
+    fetchData();
+    return () => abortController.abort();
+  }, []);
+
+  // TABLE
   const tanTable = useReactTable({
     columns,
     data,
     getCoreRowModel: getCoreRowModel(),
   });
 
+  // SUBMIT
   const onSubmit = useCallback(async (files: File[]) => {
     const formData = new FormData();
     files.forEach((file: File) => {
@@ -50,10 +66,10 @@ export const Matchlist = () => {
     });
 
     try {
-      const response = await apiPOST('/match', {
+      const response = await apiPost<ApiResponse<Match>>('/match', {
         body: formData
       });
-      console.log('Got response', response);
+      setData(response.data);
     } catch (err) {
       console.log('Error: ', err);
     }

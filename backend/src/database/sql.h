@@ -8,7 +8,7 @@ struct sqlite3_stmt;
 
 class SqlStatement {
 public:
-    using Result = std::vector<std::vector<std::string>>;
+    using Results = std::vector<std::vector<std::string>>;
 
     SqlStatement(sqlite3* connection, const char* statement_str);
     ~SqlStatement();
@@ -19,7 +19,7 @@ public:
     void bind_int(int index, int value);
     void bind_double(int index, double value);
 
-    Result execute();
+    Results execute();
 private:
     sqlite3* m_connection;
     sqlite3_stmt* m_statement;

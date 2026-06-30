@@ -49,9 +49,9 @@ void SqlStatement::bind_double(int index, double value) {
     sqlite3_bind_double(m_statement, index, value);
 }
 
-SqlStatement::Result SqlStatement::execute() {
+SqlStatement::Results SqlStatement::execute() {
     Logger& logger = Logger::get_instance();
-    Result result_rows;
+    Results result_rows;
     int result_code;
 
     // Execute statement
@@ -60,7 +60,13 @@ SqlStatement::Result SqlStatement::execute() {
             case SQLITE_ROW: {
                 result_rows.push_back(std::vector<std::string>());
                 for (int col = 0; col < sqlite3_column_count(m_statement); col++) {
-                    result_rows.back().push_back(std::string((const char*)sqlite3_column_text(m_statement, col)));
+                    unsigned const char* col_text = sqlite3_column_text(m_statement, col);
+                    if (!col_text) {
+                        result_rows.back().push_back("NULL");
+                    } else {
+                        std::string result_str = std::string((const char*)col_text);
+                        result_rows.back().push_back(result_str);
+                    }
                 }
                 break;
             }

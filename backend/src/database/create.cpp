@@ -10,7 +10,7 @@ bool database_create() {
     try {
         SqlConnection connection;
         SqlStatement create_table_match_statement = connection.prepare_from_file("../sql/create_table_match.sql");
-        SqlStatement::Result result = create_table_match_statement.execute();
+        create_table_match_statement.execute();
 
         return true;
     } catch (const std::exception& e) {

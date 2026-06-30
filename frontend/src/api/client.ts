@@ -4,13 +4,17 @@ interface RequestOptions extends RequestInit {
   body?: any;
 }
 
+export type ApiResponse<T> = {
+  data: T[];
+}
+
 async function apiCall<T>(endpoint: string, options: RequestOptions = {}) {
   const url = `${BASE_URL}${endpoint}`;
 
   const headers = new Headers(options.headers);
-  if (options.body && typeof options.body === 'object') {
-    // headers.set('Content-Type', 'application/json');
-    // options.body = JSON.stringify(options.body);
+  if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
+    headers.set('Content-Type', 'application/json');
+    options.body = JSON.stringify(options.body);
   }
 
   const config: RequestInit = {
@@ -27,14 +31,14 @@ async function apiCall<T>(endpoint: string, options: RequestOptions = {}) {
   return response.json() as Promise<T>;
 }
 
-export async function apiGET<T>(endpoint: string, options: RequestOptions = {}) {
+export async function apiGet<T>(endpoint: string, options: RequestOptions = {}) {
   return apiCall<T>(endpoint, {
     method: 'GET',
     ...options
   });
 }
 
-export async function apiPOST<T>(endpoint: string, options: RequestOptions = {}) {
+export async function apiPost<T>(endpoint: string, options: RequestOptions = {}) {
   return apiCall<T>(endpoint, {
     method: 'POST',
     ...options

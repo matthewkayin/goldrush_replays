@@ -1,5 +1,5 @@
 create table if not exists match (
-    id text primary key,
+    id integer primary key autoincrement,
     name text,
     date text,
     duration text,

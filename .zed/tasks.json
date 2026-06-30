@@ -1,0 +1,10 @@
+[
+  {
+    "label": "Build",
+    "command": "cd backend; make",
+  },
+  {
+    "label": "Clean and rebuild",
+    "command": "cd backend; make clean; make",
+  },
+]
