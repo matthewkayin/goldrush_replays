@@ -1,7 +1,9 @@
 import { type Match } from '../../../types/match.ts';
-import { Table, TableBody, TableCell, TableHead, TableRow, Box, Link } from '@mui/material';
+import { Table, TableBody, TableCell, TableHead, TableRow, Box, Stack } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useReactTable, createColumnHelper, getCoreRowModel, flexRender } from '@tanstack/react-table';
+import { MaroonButton } from '../../../components';
+import { DownloadButton } from './DownloadButton.tsx';
 
 interface MatchlistTableProps {
   data: Match[];
@@ -56,7 +58,12 @@ export const MatchlistTable = (props: MatchlistTableProps) => {
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </MatchlistTableCell>
               ))}
-              <MatchlistTableCell><Link href="#">📊Analyze</Link> <Link href="#">⬇️Download</Link></MatchlistTableCell>
+              <MatchlistTableCell>
+                <Stack direction="row" spacing={1}>
+                  <MaroonButton>📊Analyze</MaroonButton>
+                  <DownloadButton endpoint={`/replay?id=${row.original.id}`} />
+                </Stack>
+              </MatchlistTableCell>
             </TableRow>
           ))}
         </TableBody>

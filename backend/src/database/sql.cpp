@@ -8,6 +8,11 @@
 
 static const char* DATABASE_FILE = "./database.db";
 
+// Internal
+const char* sql_sqlite_type_str(int type);
+
+// STATEMENT
+
 SqlStatement::SqlStatement(sqlite3* connection, const char* statement_str) {
     m_connection = connection;
 
@@ -49,25 +54,51 @@ void SqlStatement::bind_double(int index, double value) {
     sqlite3_bind_double(m_statement, index, value);
 }
 
-SqlStatement::Results SqlStatement::execute() {
+SqlResult SqlStatement::execute() {
     Logger& logger = Logger::get_instance();
-    Results result_rows;
+    SqlResult result;
     int result_code;
 
     // Execute statement
     while ((result_code = sqlite3_step(m_statement)) != SQLITE_DONE) {
         switch (result_code) {
             case SQLITE_ROW: {
-                result_rows.push_back(std::vector<std::string>());
+                SqlRow row;
+
                 for (int col = 0; col < sqlite3_column_count(m_statement); col++) {
-                    unsigned const char* col_text = sqlite3_column_text(m_statement, col);
-                    if (!col_text) {
-                        result_rows.back().push_back("NULL");
-                    } else {
-                        std::string result_str = std::string((const char*)col_text);
-                        result_rows.back().push_back(result_str);
+                    int type = sqlite3_column_type(m_statement, col);
+
+                    switch (type) {
+                        case SQLITE_INTEGER: {
+                            row.push_back((int64_t)sqlite3_column_int64(m_statement, col));
+                            break;
+                        }
+                        case SQLITE_FLOAT: {
+                            row.push_back(sqlite3_column_double(m_statement, col));
+                            break;
+                        }
+                        case SQLITE_TEXT: {
+                            const char* text = reinterpret_cast<const char*>(sqlite3_column_text(m_statement, col));
+                            row.push_back(text ? std::string(text) : std::string("NULL"));
+                            break;
+                        }
+                        case SQLITE_BLOB: {
+                            const uint8_t* blob_data = (uint8_t*)sqlite3_column_blob(m_statement, col);
+                            int blob_size = sqlite3_column_bytes(m_statement, col);
+
+                            SqlBlob blob(blob_data, blob_data + blob_size);
+                            row.push_back(std::move(blob));
+                            break;
+                        }
+                        case SQLITE_NULL:
+                        default: {
+                            row.push_back(SqlNull{});
+                            break;
+                        }
                     }
                 }
+
+                result.push_back(std::move(row));
                 break;
             }
             case SQLITE_BUSY: {
@@ -93,8 +124,10 @@ SqlStatement::Results SqlStatement::execute() {
             result_code, sqlite3_errmsg(m_connection));
     }
 
-    return result_rows;
+    return result;
 }
+
+// CONNECTION
 
 SqlConnection::SqlConnection() {
     int result = sqlite3_open(DATABASE_FILE, &m_connection);
@@ -121,4 +154,23 @@ SqlStatement SqlConnection::prepare_from_file(const char* path) {
     string_stream << sql_file.rdbuf();
 
     return SqlStatement(m_connection, string_stream.str().c_str());
+}
+
+// INTERNAL
+
+const char* sql_sqlite_type_str(int type) {
+    switch (type) {
+        case SQLITE_INTEGER:
+            return "INTEGER";
+        case SQLITE_FLOAT:
+            return "FLOAT";
+        case SQLITE_TEXT:
+            return "TEXT";
+        case SQLITE_BLOB:
+            return "BLOB";
+        case SQLITE_NULL:
+            return "NULL";
+        default:
+            return "UNKNOWN";
+    }
 }

@@ -3,7 +3,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { Container, Snackbar } from '@mui/material';
 import { type Match } from '../../types/match.ts';
 import { UploadDialog, MatchlistTable, MatchlistFiltersCluster, type MatchlistFilters } from './components';
-import { apiGet, apiPost, type ApiResponse } from '../../api/client.ts';
+import { apiGet, apiPost } from '../../api/client.ts';
 
 export const Matchlist = () => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -42,7 +42,7 @@ export const Matchlist = () => {
 
     const fetchData = async () => {
       try {
-        const response = await apiGet<ApiResponse<Match>>(`/match${queryString}`);
+        const response = await apiGet<Match>(`/match${queryString}`);
         setData(response.data);
       } catch (err) {
         if (err.name !== 'AbortError') {
@@ -63,7 +63,7 @@ export const Matchlist = () => {
     });
 
     try {
-      const response = await apiPost<ApiResponse<Match>>('/match', {
+      const response = await apiPost<Match>('/match', {
         body: formData
       });
       const ids = response.data.map((record) => record.id).join(',');

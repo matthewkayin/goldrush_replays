@@ -1,7 +1,7 @@
 #include "match.h"
 
 #include "database/repository/match.h"
-#include "util/date.h"
+#include "api/util.h"
 #include "logger.h"
 
 void api_match_get_param(const crow::request& request, const char* name, std::string* out_str) {
@@ -38,7 +38,7 @@ crow::response api_match_get(const crow::request& request) {
         return response;
     } catch (const std::exception& e) {
         logger.error("Exception in /api/v1/match GET: %s", e.what());
-        return crow::response(400, e.what());
+        return api_response_error(400, e.what());
     }
 }
 
@@ -64,7 +64,7 @@ crow::response api_match_post(const crow::request& request) {
 
             post_records.push_back({
                 .name = filename.c_str(),
-                .date = date_util_today_string(),
+                .date = api_today_string(),
                 .duration = "0:00",
                 .data = part.body
             });
@@ -97,6 +97,6 @@ crow::response api_match_post(const crow::request& request) {
         return response;
     } catch (const std::exception& e) {
         logger.error("Exception in /api/v1/match POST: %s", e.what());
-        return crow::response(400, e.what());
+        return api_response_error(400, e.what());
     }
 }

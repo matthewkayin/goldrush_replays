@@ -2,7 +2,7 @@
 
 #include "logger.h"
 #include "database/sql.h"
-#include "util/qs_validate.h"
+#include "api/util.h"
 
 crow::json::wvalue MatchGetRecord::to_json() const {
     crow::json::wvalue json;
@@ -18,9 +18,11 @@ std::vector<MatchGetRecord> match_repository_get(const MatchGetQueryParams& para
     // Convert query string into statement
     std::string statement_str = "select id, name, date, duration from match where 1 = 1";
 
+    // TODO: move validation out of this function
+
     // IDs
     if (!params.ids.empty()) {
-        if (!query_string_validate_uint_list(params.ids.c_str())) {
+        if (!api_query_string_validate_uint_list(params.ids.c_str())) {
             throw exceptionf("Query string param ids is not a list of numbers.");
         }
         statement_str += "\n and id in (" + params.ids + ")";
@@ -28,7 +30,7 @@ std::vector<MatchGetRecord> match_repository_get(const MatchGetQueryParams& para
 
     // Date from
     if (!params.date_from.empty()) {
-        if (!query_string_validate_date_iso_string(params.date_from.c_str())) {
+        if (!api_query_string_validate_date_string(params.date_from.c_str())) {
             throw exceptionf("Query string param date_from is not a valid date.");
         }
         statement_str += "\n and date >= '" + params.date_from + "'";
@@ -36,7 +38,7 @@ std::vector<MatchGetRecord> match_repository_get(const MatchGetQueryParams& para
 
     // Date to
     if (!params.date_to.empty()) {
-        if (!query_string_validate_date_iso_string(params.date_to.c_str())) {
+        if (!api_query_string_validate_date_string(params.date_to.c_str())) {
             throw exceptionf("Query string param date_to is not a valid date.");
         }
         statement_str += "\n and date <= '" + params.date_to + "'";
@@ -51,43 +53,15 @@ std::vector<MatchGetRecord> match_repository_get(const MatchGetQueryParams& para
 
     SqlConnection connection;
     SqlStatement statement = connection.prepare(statement_str.c_str());
-    SqlStatement::Results results = statement.execute();
+    SqlResult result = statement.execute();
 
     std::vector<MatchGetRecord> records;
-    for (const auto& row : results) {
+    for (const SqlRow& row : result) {
         records.push_back({
-            .id = stoul(row[0]),
-            .name = row[1],
-            .date = row[2],
-            .duration = row[3]
-        });
-    }
-
-    return records;
-}
-
-std::vector<MatchGetRecord> match_repository_get_by_ids(const std::vector<uint32_t>& ids) {
-    std::string id_list;
-    for (uint32_t id_index = 0; id_index < ids.size(); id_index++) {
-        if (id_index != 0) {
-            id_list += ",";
-        }
-        id_list += std::to_string(ids[id_index]);
-    }
-
-    SqlConnection connection;
-    SqlStatement statement = connection.prepare(
-        (std::string("select id, name, date, duration from match \
-         where id in (") + id_list + ");").c_str());
-    SqlStatement::Results results = statement.execute();
-
-    std::vector<MatchGetRecord> records;
-    for (const auto& row : results) {
-        records.push_back({
-            .id = stoul(row[0]),
-            .name = row[1],
-            .date = row[2],
-            .duration = row[3]
+            .id = (uint32_t)std::get<int64_t>(row[0]),
+            .name = std::get<std::string>(row[1]),
+            .date = std::get<std::string>(row[2]),
+            .duration = std::get<std::string>(row[3])
         });
     }
 
@@ -107,13 +81,13 @@ std::vector<uint32_t> match_repository_post(std::vector<MatchPostRecord> records
         statement.bind_text(2, record.date.c_str());
         statement.bind_text(3, record.duration.c_str());
         statement.bind_blob(4, (void*)record.data.data(), record.data.length());
-        SqlStatement::Results results = statement.execute();
+        SqlResult result = statement.execute();
 
-        if (results.empty()) {
+        if (result.empty()) {
             throw exceptionf("No ID returned after match insert.");
         }
 
-        ids.push_back(stoul(results[0][0]));
+        ids.push_back((uint32_t)std::get<int64_t>(result[0][0]));
     }
 
     return ids;

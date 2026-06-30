@@ -2,14 +2,19 @@
 
 #include <string>
 #include <vector>
+#include <variant>
 
 struct sqlite3;
 struct sqlite3_stmt;
 
+using SqlBlob = std::vector<char>;
+using SqlNull = std::monostate;
+using SqlCell = std::variant<SqlNull, int64_t, double, std::string, SqlBlob>;
+using SqlRow = std::vector<SqlCell>;
+using SqlResult = std::vector<SqlRow>;
+
 class SqlStatement {
 public:
-    using Results = std::vector<std::vector<std::string>>;
-
     SqlStatement(sqlite3* connection, const char* statement_str);
     ~SqlStatement();
 
@@ -19,7 +24,7 @@ public:
     void bind_int(int index, int value);
     void bind_double(int index, double value);
 
-    Results execute();
+    SqlResult execute();
 private:
     sqlite3* m_connection;
     sqlite3_stmt* m_statement;
