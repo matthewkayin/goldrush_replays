@@ -7,8 +7,8 @@
 
 struct MatchGetQueryParams {
     std::string ids;
-    std::string date_gte;
-    std::string date_lte;
+    std::string date_from;
+    std::string date_to;
     std::string name_contains;
 };
 

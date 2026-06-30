@@ -26,20 +26,20 @@ std::vector<MatchGetRecord> match_repository_get(const MatchGetQueryParams& para
         statement_str += "\n and id in (" + params.ids + ")";
     }
 
-    // Date after
-    if (!params.date_gte.empty()) {
-        if (!query_string_validate_date_iso_string(params.date_gte.c_str())) {
-            throw exceptionf("Query string param start_date is not a valid date.");
+    // Date from
+    if (!params.date_from.empty()) {
+        if (!query_string_validate_date_iso_string(params.date_from.c_str())) {
+            throw exceptionf("Query string param date_from is not a valid date.");
         }
-        statement_str += "\n and date >= '" + params.date_gte + "'";
+        statement_str += "\n and date >= '" + params.date_from + "'";
     }
 
-    // End date
-    if (!params.date_lte.empty()) {
-        if (!query_string_validate_date_iso_string(params.date_lte.c_str())) {
-            throw exceptionf("Query string param end_date is not a valid date.");
+    // Date to
+    if (!params.date_to.empty()) {
+        if (!query_string_validate_date_iso_string(params.date_to.c_str())) {
+            throw exceptionf("Query string param date_to is not a valid date.");
         }
-        statement_str += "\n and date <= '" + params.date_lte + "'";
+        statement_str += "\n and date <= '" + params.date_to + "'";
     }
 
     // Name

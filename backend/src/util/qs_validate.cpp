@@ -31,11 +31,8 @@ bool query_string_validate_uint_list(const char* param) {
 }
 
 bool query_string_validate_date_iso_string(const char* date_str) {
-    try {
-        DateTime date = DateTime::from_iso_string(date_str);
-        std::string iso_string = date.to_iso_string();
-        return std::string(date_str) == iso_string;
-    } catch (const std::exception&) {
-        return false;
-    }
+    uint32_t year, month, day;
+    int items_parsed = sscanf(date_str, "%d-%d-%d",
+        &year, &month, &day);
+    return items_parsed == 3 && strlen(date_str) == strlen("YYYY-MM-DD");
 }

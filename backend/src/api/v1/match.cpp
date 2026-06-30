@@ -19,8 +19,8 @@ crow::response api_match_get(const crow::request& request) {
         // Build query params
         MatchGetQueryParams query_params;
         api_match_get_param(request, "ids", &query_params.ids);
-        api_match_get_param(request, "date_gte", &query_params.date_gte);
-        api_match_get_param(request, "date_lte", &query_params.date_lte);
+        api_match_get_param(request, "date_from", &query_params.date_from);
+        api_match_get_param(request, "date_to", &query_params.date_to);
         api_match_get_param(request, "name_contains", &query_params.name_contains);
 
         // Get records
@@ -64,7 +64,7 @@ crow::response api_match_post(const crow::request& request) {
 
             post_records.push_back({
                 .name = filename.c_str(),
-                .date = DateTime::now().to_iso_string(),
+                .date = date_util_today_string(),
                 .duration = "0:00",
                 .data = part.body
             });

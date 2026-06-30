@@ -1,37 +1,39 @@
-import { Section, SectionHeader } from '../../components/SectionHeader.tsx';
+import { Section, SectionHeader, MaroonButton } from '../../components';
 import { useState, useCallback, useEffect } from 'react';
-import { Container, Table, TableBody, TableCell, TableHead, TableRow, Box, Link, Button, Snackbar } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { Container, Snackbar } from '@mui/material';
 import { type Match } from '../../types/match.ts';
-import { useReactTable, createColumnHelper, getCoreRowModel, flexRender } from '@tanstack/react-table';
-import { UploadDialog } from './components/UploadDialog.tsx';
+import { UploadDialog, MatchlistTable, MatchlistFiltersCluster, type MatchlistFilters } from './components';
 import { apiGet, apiPost, type ApiResponse } from '../../api/client.ts';
-
-const columnHelper = createColumnHelper<Match>();
-const columns = [
-  columnHelper.accessor('date', {
-    header: 'Date',
-    cell: (info) => info.getValue()
-  }),
-  columnHelper.accessor('name', {
-    header: 'Name',
-    cell: (info) => info.getValue()
-  }),
-  columnHelper.accessor('duration', {
-    header: 'Duration',
-    cell: (info) => info.getValue()
-  })
-];
-
-const MatchlistTableCell = styled(TableCell)`
-  border-bottom: 1px solid var(--color-offblack);
-`;
 
 export const Matchlist = () => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [data, setData] = useState<Match[]>([]);
+  const [filters, setFilters] = useState<MatchlistFilters>({});
   const [queryString, setQueryString] = useState('');
   const [snackMessage, setSnackMessage] = useState('');
+
+  const updateFilters = (newFilters: MatchlistFilters, submit: boolean) => {
+    setFilters(newFilters);
+
+    if (submit) {
+      const toSnakeCase = str => str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+      const queryStringParts = [];
+      Object.keys(newFilters).forEach((key) => {
+        if (!newFilters[key]) {
+          return;
+        }
+
+        queryStringParts.push(`${toSnakeCase(key)}=${newFilters[key]}`);
+      })
+
+      if (queryStringParts.length === 0) {
+        setQueryString('');
+        return;
+      }
+
+      setQueryString(`?${queryStringParts.join('&')}`);
+    }
+  };
 
   // GET MATCH DATA
   useEffect(() => {
@@ -53,13 +55,6 @@ export const Matchlist = () => {
     return () => abortController.abort();
   }, [queryString]);
 
-  // TABLE
-  const tanTable = useReactTable({
-    columns,
-    data,
-    getCoreRowModel: getCoreRowModel(),
-  });
-
   // SUBMIT
   const onSubmit = useCallback(async (files: File[]) => {
     const formData = new FormData();
@@ -72,6 +67,7 @@ export const Matchlist = () => {
         body: formData
       });
       const ids = response.data.map((record) => record.id).join(',');
+      updateFilters({}, false);
       setQueryString(`?ids=${ids}`);
       setSnackMessage('Upload success');
     } catch (err) {
@@ -89,37 +85,14 @@ export const Matchlist = () => {
       <Section>
         <SectionHeader>Replays</SectionHeader>
       </Section>
+      <MatchlistFiltersCluster
+        filters={filters}
+        onFiltersUpdated={updateFilters}
+      />
       <Section>
-        <Button onClick={(e) => { e.preventDefault(); setUploadDialogOpen(true); }}>⬆️Upload New Replay</Button>
+        <MaroonButton onClick={(e) => { e.preventDefault(); setUploadDialogOpen(true); }}>⬆️Upload New Replay</MaroonButton>
       </Section>
-      <Box>
-        <Table>
-          <TableHead>
-            {tanTable.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <MatchlistTableCell key={header.id}>
-                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                  </MatchlistTableCell>
-                ))}
-                <MatchlistTableCell>Actions</MatchlistTableCell>
-              </TableRow>
-            ))}
-          </TableHead>
-          <TableBody>
-            {tanTable.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <MatchlistTableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </MatchlistTableCell>
-                ))}
-                <MatchlistTableCell><Link href="#">📊Analyze</Link> <Link href="#">⬇️Download</Link></MatchlistTableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Box>
+      <MatchlistTable data={data} />
 
       <UploadDialog
       open={uploadDialogOpen}
