@@ -1,6 +1,6 @@
 import { Section, SectionHeader, MaroonButton } from '../../components';
 import { useState, useCallback, useEffect } from 'react';
-import { Container, Snackbar } from '@mui/material';
+import { Container, Snackbar, Stack, Box } from '@mui/material';
 import { type Match } from '../../types/match.ts';
 import { UploadDialog, MatchlistTable, MatchlistFiltersCluster, type MatchlistFilters } from './components';
 import { apiGet, apiPost } from '../../api/client.ts';
@@ -85,13 +85,16 @@ export const Matchlist = () => {
       <Section>
         <SectionHeader>Replays</SectionHeader>
       </Section>
-      <MatchlistFiltersCluster
-        filters={filters}
-        onFiltersUpdated={updateFilters}
-      />
-      <Section>
-        <MaroonButton onClick={(e) => { e.preventDefault(); setUploadDialogOpen(true); }}>⬆️Upload New Replay</MaroonButton>
-      </Section>
+      <Stack direction="row" spacing={2}>
+        <MatchlistFiltersCluster
+          filters={filters}
+          onFiltersUpdated={updateFilters}
+        />
+        <Stack>
+          <MaroonButton onClick={(e) => { e.preventDefault(); setUploadDialogOpen(true); }}>⬆️Upload New Replay</MaroonButton>
+          <Box/>
+        </Stack>
+      </Stack>
       <MatchlistTable data={data} />
 
       <UploadDialog
