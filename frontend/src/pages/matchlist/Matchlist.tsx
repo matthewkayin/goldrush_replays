@@ -5,7 +5,7 @@ import { type Match } from '../../types/match.ts';
 import { PaginationCluster, UploadDialog, MatchlistTable, MatchlistFiltersCluster, type MatchlistFilters } from './components';
 import { apiGet, apiPost } from '../../api/client.ts';
 
-const MATCHLIST_PAGE_SIZE = 2;
+const MATCHLIST_PAGE_SIZE = 10;
 
 const getQueryString = (filters: MatchlistFilters, page: number) => {
   // Special case, if ids specified, then ignore all other filters and pagination
