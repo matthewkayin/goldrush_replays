@@ -10,6 +10,15 @@ crow::response api_response_error(int code, const char* message) {
     return crow::response(code, response_json.dump());
 }
 
+// URL PARAMS
+
+void api_get_param(const crow::request& request, const char* name, std::string* out_str) {
+    const char* param = request.url_params.get(name);
+    if (param) {
+        *out_str = std::string(param);
+    }
+}
+
 // QUERY STRING
 
 bool is_digit(char c) {

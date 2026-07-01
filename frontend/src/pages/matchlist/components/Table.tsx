@@ -1,15 +1,15 @@
-import { type Match } from '../../../types/match.ts';
+import { type Replay } from '../../../types/replay.ts';
 import { Table, TableBody, TableCell, TableHead, TableRow, Box, Stack } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useReactTable, createColumnHelper, getCoreRowModel, flexRender } from '@tanstack/react-table';
 import { MaroonButton } from '../../../components';
 import { DownloadButton } from './DownloadButton.tsx';
 
-interface MatchlistTableProps {
-  data: Match[];
+interface ReplaylistTableProps {
+  data: Replay[];
 }
 
-const columnHelper = createColumnHelper<Match>();
+const columnHelper = createColumnHelper<Replay>();
 const columns = [
   columnHelper.accessor('date', {
     header: 'Date',
@@ -25,11 +25,11 @@ const columns = [
   })
 ];
 
-const MatchlistTableCell = styled(TableCell)`
+const ReplaylistTableCell = styled(TableCell)`
   border-bottom: 1px solid var(--color-offblack);
 `;
 
-export const MatchlistTable = (props: MatchlistTableProps) => {
+export const ReplaylistTable = (props: ReplaylistTableProps) => {
   const tanTable = useReactTable({
     columns,
     data: props.data,
@@ -42,11 +42,11 @@ export const MatchlistTable = (props: MatchlistTableProps) => {
           {tanTable.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <MatchlistTableCell key={header.id}>
+                <ReplaylistTableCell key={header.id}>
                   {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                </MatchlistTableCell>
+                </ReplaylistTableCell>
               ))}
-              <MatchlistTableCell>Actions</MatchlistTableCell>
+              <ReplaylistTableCell>Actions</ReplaylistTableCell>
             </TableRow>
           ))}
         </TableHead>
@@ -54,16 +54,16 @@ export const MatchlistTable = (props: MatchlistTableProps) => {
           {tanTable.getRowModel().rows.map((row) => (
             <TableRow key={row.id}>
               {row.getVisibleCells().map((cell) => (
-                <MatchlistTableCell key={cell.id}>
+                <ReplaylistTableCell key={cell.id}>
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </MatchlistTableCell>
+                </ReplaylistTableCell>
               ))}
-              <MatchlistTableCell>
+              <ReplaylistTableCell>
                 <Stack direction="row" spacing={1}>
                   <MaroonButton>📊Analyze</MaroonButton>
-                  <DownloadButton endpoint={`/replay?id=${row.original.id}`} />
+                  <DownloadButton endpoint={`/replay-data?id=${row.original.id}`} />
                 </Stack>
-              </MatchlistTableCell>
+              </ReplaylistTableCell>
             </TableRow>
           ))}
         </TableBody>

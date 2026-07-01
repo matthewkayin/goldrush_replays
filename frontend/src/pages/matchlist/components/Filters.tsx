@@ -8,19 +8,19 @@ const FilterTextfield = styled(TextField)`
   border-radius: 1px;
 `;
 
-export type MatchlistFilters = {
+export type ReplaylistFilters = {
   ids?: number[];
   nameContains?: string;
   dateFrom?: string;
   dateTo?: string;
 };
 
-type MatchlistFiltersClusterProps = {
-  filters: MatchlistFilters;
-  onFiltersUpdated: (newFilters: MatchlistFilters, submit: boolean) => void;
+type ReplaylistFiltersClusterProps = {
+  filters: ReplaylistFilters;
+  onFiltersUpdated: (newFilters: ReplaylistFilters, submit: boolean) => void;
 };
 
-export const MatchlistFiltersCluster = ({ filters, onFiltersUpdated }: MatchlistFiltersClusterProps) => {
+export const ReplaylistFiltersCluster = ({ filters, onFiltersUpdated }: ReplaylistFiltersClusterProps) => {
   return (
     <Section>
       <Box sx={{ display: "grid", gridTemplateColumns: 'max-content max-content auto 1fr', gap: 2, alignItems: 'center' }}>

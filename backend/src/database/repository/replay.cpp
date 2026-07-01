@@ -1,10 +1,10 @@
-#include "match.h"
+#include "replay.h"
 
 #include "logger.h"
 #include "database/sql.h"
 #include "api/util.h"
 
-crow::json::wvalue MatchGetRecord::to_json() const {
+crow::json::wvalue ReplayGetRecord::to_json() const {
     crow::json::wvalue json;
     json["id"] = id;
     json["name"] = name;
@@ -14,7 +14,7 @@ crow::json::wvalue MatchGetRecord::to_json() const {
     return json;
 }
 
-std::string MatchGetQueryParams::to_where_clause() const {
+std::string ReplayGetQueryParams::to_where_clause() const {
     std::string where_clause = "1 = 1";
 
     // TODO: move validation out of this function
@@ -51,8 +51,8 @@ std::string MatchGetQueryParams::to_where_clause() const {
     return where_clause;
 }
 
-uint32_t match_repository_get_count(const MatchGetQueryParams& params) {
-    std::string statement_str = "select count(*) as match_count from match where " + params.to_where_clause() + ";";
+uint32_t replay_repository_get_count(const ReplayGetQueryParams& params) {
+    std::string statement_str = "select count(*) as replay_count from replays where " + params.to_where_clause() + ";";
 
     SqlConnection connection;
     SqlStatement statement = connection.prepare(statement_str.c_str());
@@ -65,14 +65,14 @@ uint32_t match_repository_get_count(const MatchGetQueryParams& params) {
     return (uint32_t)std::get<int64_t>(result[0][0]);
 }
 
-std::vector<MatchGetRecord> match_repository_get(const MatchGetQueryParams& params, uint32_t offset, uint32_t limit) {
+std::vector<ReplayGetRecord> replay_repository_get(const ReplayGetQueryParams& params, uint32_t offset, uint32_t limit) {
     std::string statement_str =
-        "select id, name, date, duration from match where " + params.to_where_clause();
-    if (limit != MATCH_GET_LIMIT_NONE) {
+        "select id, name, date, duration from replays where " + params.to_where_clause();
+    if (limit != REPLAY_GET_LIMIT_NONE) {
         statement_str += " limit " + std::to_string(limit);
     }
     // SQLite cannot do an offset unless you provide a limit
-    if (limit != MATCH_GET_LIMIT_NONE && offset != MATCH_GET_OFFSET_NONE) {
+    if (limit != REPLAY_GET_LIMIT_NONE && offset != REPLAY_GET_OFFSET_NONE) {
         statement_str += " offset " + std::to_string(offset);
     }
     statement_str += ";";
@@ -81,7 +81,7 @@ std::vector<MatchGetRecord> match_repository_get(const MatchGetQueryParams& para
     SqlStatement statement = connection.prepare(statement_str.c_str());
     SqlResult result = statement.execute();
 
-    std::vector<MatchGetRecord> records;
+    std::vector<ReplayGetRecord> records;
     for (const SqlRow& row : result) {
         records.push_back({
             .id = (uint32_t)std::get<int64_t>(row[0]),
@@ -94,15 +94,15 @@ std::vector<MatchGetRecord> match_repository_get(const MatchGetQueryParams& para
     return records;
 }
 
-std::vector<uint32_t> match_repository_post(std::vector<MatchPostRecord> records) {
+std::vector<uint32_t> replay_repository_post(std::vector<ReplayPostRecord> records) {
     SqlConnection connection;
     SqlStatement statement = connection.prepare(
-        "insert into match (name, date, duration, data) \
+        "insert into replays (name, date, duration, data) \
          values (?, ?, ?, ?) \
          returning id;");
 
     std::vector<uint32_t> ids;
-    for (const MatchPostRecord& record : records) {
+    for (const ReplayPostRecord& record : records) {
         statement.bind_text(1, record.name.c_str());
         statement.bind_text(2, record.date.c_str());
         statement.bind_text(3, record.duration.c_str());
@@ -117,4 +117,26 @@ std::vector<uint32_t> match_repository_post(std::vector<MatchPostRecord> records
     }
 
     return ids;
+}
+
+ReplayDataRecord replay_repository_get_data(uint32_t replay_id) {
+    Logger& logger = Logger::get_instance();
+
+    SqlConnection connection;
+    SqlStatement statement = connection.prepare("select name, data from replays where id = ?;");
+    statement.bind_int(1, replay_id);
+
+    SqlResult result = statement.execute();
+    if (result.empty()) {
+        throw exceptionf("Replay with ID %u does not exist.", replay_id);
+    }
+    if (result.size() > 1) {
+        logger.warn("Multiple rows returned for match with ID %u. Row count: %u", replay_id, result.size());
+    }
+
+    return {
+        .id = replay_id,
+        .name = std::get<std::string>(result[0][0]),
+        .data = std::get<SqlBlob>(result[0][1])
+    };
 }

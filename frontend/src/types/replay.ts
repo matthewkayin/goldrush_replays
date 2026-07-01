@@ -1,4 +1,4 @@
-export type Match = {
+export type Replay = {
   id: number;
   date: string;
   name: string;

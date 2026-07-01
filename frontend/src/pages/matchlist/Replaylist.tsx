@@ -1,13 +1,13 @@
 import { Section, SectionHeader, MaroonButton } from '../../components';
 import { useState, useCallback, useEffect } from 'react';
 import { Container, Snackbar, Stack, Box } from '@mui/material';
-import { type Match } from '../../types/match.ts';
-import { PaginationCluster, UploadDialog, MatchlistTable, MatchlistFiltersCluster, type MatchlistFilters } from './components';
+import { type Replay } from '../../types/replay.ts';
+import { PaginationCluster, UploadDialog, ReplaylistTable, ReplaylistFiltersCluster, type ReplaylistFilters } from './components';
 import { apiGet, apiPost } from '../../api/client.ts';
 
-const MATCHLIST_PAGE_SIZE = 10;
+const REPLAYLIST_PAGE_SIZE = 8;
 
-const getQueryString = (filters: MatchlistFilters, page: number) => {
+const getQueryString = (filters: ReplaylistFilters, page: number) => {
   // Special case, if ids specified, then ignore all other filters and pagination
   // and just query based on the ids
   if (filters.ids) {
@@ -26,7 +26,7 @@ const getQueryString = (filters: MatchlistFilters, page: number) => {
   })
 
   const queryStringFilters = queryStringParts.join(',');
-  return `?${queryStringFilters}&offset=${(page - 1) * MATCHLIST_PAGE_SIZE}&limit=${MATCHLIST_PAGE_SIZE}`;
+  return `?${queryStringFilters}&offset=${(page - 1) * REPLAYLIST_PAGE_SIZE}&limit=${REPLAYLIST_PAGE_SIZE}`;
 };
 
 const getPageCount = (page: number, recordsRemaining?: number) => {
@@ -34,9 +34,9 @@ const getPageCount = (page: number, recordsRemaining?: number) => {
     return 1;
   }
 
-  const totalRecords = (page * MATCHLIST_PAGE_SIZE) + recordsRemaining;
-  let totalPages = Math.floor(totalRecords / MATCHLIST_PAGE_SIZE);
-  if (totalRecords % MATCHLIST_PAGE_SIZE !== 0) {
+  const totalRecords = (page * REPLAYLIST_PAGE_SIZE) + recordsRemaining;
+  let totalPages = Math.floor(totalRecords / REPLAYLIST_PAGE_SIZE);
+  if (totalRecords % REPLAYLIST_PAGE_SIZE !== 0) {
     totalPages++;
   }
   console.log(`Page ${page} remaining ${recordsRemaining} total records ${totalRecords} total pages ${totalPages}`);
@@ -44,16 +44,16 @@ const getPageCount = (page: number, recordsRemaining?: number) => {
   return totalPages;
 }
 
-export const Matchlist = () => {
+export const Replaylist = () => {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const [data, setData] = useState<Match[]>([]);
-  const [filters, setFilters] = useState<MatchlistFilters>({});
-  const [draftFilters, setDraftFilters] = useState<MatchlistFilters>({});
+  const [data, setData] = useState<Replay[]>([]);
+  const [filters, setFilters] = useState<ReplaylistFilters>({});
+  const [draftFilters, setDraftFilters] = useState<ReplaylistFilters>({});
   const [snackMessage, setSnackMessage] = useState('');
   const [page, setPage] = useState(1);
   const [maxPage, setMaxPage] = useState(1);
 
-  const updateFilters = (newFilters: MatchlistFilters, submit: boolean) => {
+  const updateFilters = (newFilters: ReplaylistFilters, submit: boolean) => {
     setDraftFilters(newFilters);
     if (submit) {
       setFilters(newFilters);
@@ -68,7 +68,7 @@ export const Matchlist = () => {
     setPage(newPage);
   };
 
-  // GET MATCH DATA
+  // GET REPLAY DATA
   useEffect(() => {
     // Cleans up pending requests if the component unmounts
     const abortController = new AbortController();
@@ -77,7 +77,7 @@ export const Matchlist = () => {
 
     const fetchData = async () => {
       try {
-        const response = await apiGet<Match>(`/match${queryString}`);
+        const response = await apiGet<Replay>(`/replay${queryString}`);
         setData(response.data);
         setMaxPage(getPageCount(page, response.remaining));
       } catch (err) {
@@ -99,7 +99,7 @@ export const Matchlist = () => {
     });
 
     try {
-      const response = await apiPost<Match>('/match', {
+      const response = await apiPost<Replay>('/replay', {
         body: formData
       });
 
@@ -125,7 +125,7 @@ export const Matchlist = () => {
       </Section>
       <Stack spacing={2}>
         <Stack direction="row" spacing={2}>
-          <MatchlistFiltersCluster
+          <ReplaylistFiltersCluster
             filters={draftFilters}
             onFiltersUpdated={updateFilters}
           />
@@ -135,7 +135,7 @@ export const Matchlist = () => {
           </Stack>
         </Stack>
         <PaginationCluster page={page} maxPage={maxPage} setPage={updatePage} />
-        <MatchlistTable data={data} />
+        <ReplaylistTable data={data} />
       </Stack>
 
       <UploadDialog
