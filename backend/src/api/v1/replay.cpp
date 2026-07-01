@@ -32,7 +32,7 @@ crow::response api_replay_get(const crow::request& request) {
         crow::response response;
         response.code = 200;
         response.set_header("Content-Type", "application/octet-stream");
-        response.set_header("Content-Disposition", "attachment; filename=\"" + result_name + ".rep\"");
+        response.set_header("Content-Disposition", "attachment; filename=\"" + result_name + "\"");
         response.write(std::string(result_blob.begin(), result_blob.end()));
 
         return response;

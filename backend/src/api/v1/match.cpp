@@ -23,8 +23,16 @@ crow::response api_match_get(const crow::request& request) {
         api_match_get_param(request, "date_to", &query_params.date_to);
         api_match_get_param(request, "name_contains", &query_params.name_contains);
 
+        // Pagination query params
+        const char* offset_str = request.url_params.get("offset");
+        uint32_t offset = offset_str ? atoi(offset_str) : 0;
+        const char* limit_str = request.url_params.get("limit");
+        uint32_t limit = limit_str ? atoi(limit_str) : 10;
+
         // Get records
-        std::vector<MatchGetRecord> records = match_repository_get(query_params);
+        uint32_t record_count = match_repository_get_count(query_params);
+        std::vector<MatchGetRecord> records = match_repository_get(query_params, offset, limit);
+        uint32_t records_remaining = (uint32_t)std::max((int64_t)record_count - (int64_t)(offset + limit), (int64_t)0);
 
         // Convert response records to JSON
         std::vector<crow::json::wvalue> response_data;
@@ -34,6 +42,7 @@ crow::response api_match_get(const crow::request& request) {
 
         crow::json::wvalue response;
         response["data"] = std::move(response_data);
+        response["remaining"] = records_remaining;
 
         return response;
     } catch (const std::exception& e) {
@@ -83,7 +92,7 @@ crow::response api_match_post(const crow::request& request) {
         }
 
         // Get response records
-        std::vector<MatchGetRecord> get_records = match_repository_get(query_params);
+        std::vector<MatchGetRecord> get_records = match_repository_get(query_params, MATCH_GET_OFFSET_NONE, MATCH_GET_LIMIT_NONE);
 
         // Convert response records into JSON
         std::vector<crow::json::wvalue> get_record_jsons;

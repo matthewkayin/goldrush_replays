@@ -9,6 +9,7 @@ const FilterTextfield = styled(TextField)`
 `;
 
 export type MatchlistFilters = {
+  ids?: number[];
   nameContains?: string;
   dateFrom?: string;
   dateTo?: string;

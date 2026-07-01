@@ -6,6 +6,7 @@ interface RequestOptions extends RequestInit {
 
 export type ApiResponse<T> = {
   data: T[];
+  remaining?: number;
 }
 
 async function apiCall(endpoint: string, options: RequestOptions = {}): Promise<Response> {

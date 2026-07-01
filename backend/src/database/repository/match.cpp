@@ -14,41 +14,67 @@ crow::json::wvalue MatchGetRecord::to_json() const {
     return json;
 }
 
-std::vector<MatchGetRecord> match_repository_get(const MatchGetQueryParams& params) {
-    // Convert query string into statement
-    std::string statement_str = "select id, name, date, duration from match where 1 = 1";
+std::string MatchGetQueryParams::to_where_clause() const {
+    std::string where_clause = "1 = 1";
 
     // TODO: move validation out of this function
 
     // IDs
-    if (!params.ids.empty()) {
-        if (!api_query_string_validate_uint_list(params.ids.c_str())) {
+    if (!ids.empty()) {
+        if (!api_query_string_validate_uint_list(ids.c_str())) {
             throw exceptionf("Query string param ids is not a list of numbers.");
         }
-        statement_str += "\n and id in (" + params.ids + ")";
+        where_clause += "\n and id in (" + ids + ")";
     }
 
     // Date from
-    if (!params.date_from.empty()) {
-        if (!api_query_string_validate_date_string(params.date_from.c_str())) {
+    if (!date_from.empty()) {
+        if (!api_query_string_validate_date_string(date_from.c_str())) {
             throw exceptionf("Query string param date_from is not a valid date.");
         }
-        statement_str += "\n and date >= '" + params.date_from + "'";
+        where_clause += "\n and date >= '" + date_from + "'";
     }
 
     // Date to
-    if (!params.date_to.empty()) {
-        if (!api_query_string_validate_date_string(params.date_to.c_str())) {
+    if (!date_to.empty()) {
+        if (!api_query_string_validate_date_string(date_to.c_str())) {
             throw exceptionf("Query string param date_to is not a valid date.");
         }
-        statement_str += "\n and date <= '" + params.date_to + "'";
+        where_clause += "\n and date <= '" + date_to + "'";
     }
 
     // Name
-    if (!params.name_contains.empty()) {
-        statement_str += "\n and name like '%" + params.name_contains + "%'";
+    if (!name_contains.empty()) {
+        where_clause += "\n and name like '%" + name_contains + "%'";
     }
 
+    return where_clause;
+}
+
+uint32_t match_repository_get_count(const MatchGetQueryParams& params) {
+    std::string statement_str = "select count(*) as match_count from match where " + params.to_where_clause() + ";";
+
+    SqlConnection connection;
+    SqlStatement statement = connection.prepare(statement_str.c_str());
+
+    SqlResult result = statement.execute();
+    if (result.empty() || result[0].empty()) {
+        throw exceptionf("Failed to determine total row count.");
+    }
+
+    return (uint32_t)std::get<int64_t>(result[0][0]);
+}
+
+std::vector<MatchGetRecord> match_repository_get(const MatchGetQueryParams& params, uint32_t offset, uint32_t limit) {
+    std::string statement_str =
+        "select id, name, date, duration from match where " + params.to_where_clause();
+    if (limit != MATCH_GET_LIMIT_NONE) {
+        statement_str += " limit " + std::to_string(limit);
+    }
+    // SQLite cannot do an offset unless you provide a limit
+    if (limit != MATCH_GET_LIMIT_NONE && offset != MATCH_GET_OFFSET_NONE) {
+        statement_str += " offset " + std::to_string(offset);
+    }
     statement_str += ";";
 
     SqlConnection connection;

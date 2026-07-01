@@ -1,5 +1,5 @@
 export type Match = {
-  id: string;
+  id: number;
   date: string;
   name: string;
   duration: string;
